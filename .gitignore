@@ -34,3 +34,12 @@ npm-debug.log*
 # temp / test artifacts
 *.log
 /tmp/
+
+# documentation (local only)
+/docs/
+
+# project memory (local only)
+/MEMORY.md
+
+# scope & task division (local only)
+/SCOPE.md

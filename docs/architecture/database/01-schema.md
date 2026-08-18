@@ -113,7 +113,67 @@ model Review {
 
 ---
 
-## 3. Feature-to-Table Mapping (Issue #14, #9)
+## 3. Baseline SQL Migration (`prisma/migrations/.../migration.sql`)
+
+```sql
+-- CreateTable
+CREATE TABLE "users" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "products" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT NOT NULL,
+    "category" TEXT NOT NULL,
+    "price" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "products_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "reviews" (
+    "id" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "rating" SMALLINT NOT NULL,
+    "title" TEXT NOT NULL,
+    "body" TEXT NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "reviews_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE INDEX "reviews_productId_isDeleted_idx" ON "reviews"("productId", "isDeleted");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "reviews_userId_productId_key" ON "reviews"("userId", "productId");
+
+-- AddForeignKey
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_productId_fkey" FOREIGN KEY ("productId") REFERENCES "products"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "reviews" ADD CONSTRAINT "reviews_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+```
+
+---
+
+## 4. Feature-to-Table Mapping (Issue #14, #9)
 
 | Feature | Tables Used | Critical Queries |
 |---------|-------------|------------------|
@@ -130,7 +190,7 @@ model Review {
 
 ---
 
-## 4. Indexes & Constraints
+## 5. Indexes & Constraints
 
 | Index / Constraint | Table | Purpose |
 |--------------------|-------|---------|
@@ -139,12 +199,12 @@ model Review {
 | `@@index([productId, isDeleted])` | reviews | Fast count query with soft-delete filter |
 | `@@index([productId, fitFeedback])` | reviews | Fit distribution groupBy acceleration |
 | `UNIQUE email` | users | User identity |
-| rating 1–5 validation | reviews (DTO only) | Enforced at application layer (`@Min(1) @Max(5)`); no DB `CHECK` constraint yet — see §6 note |
+| rating 1–5 validation | reviews (DTO only) | Enforced at application layer (`@Min(1) @Max(5)`); no DB `CHECK` constraint yet — see §7 note |
 | FK cascade delete | reviews→product, reviews→user | Cleanup |
 
 ---
 
-## 5. Design Decisions & Trade-offs
+## 6. Design Decisions & Trade-offs
 
 | Decision | Choice | Why NOT the alternative |
 |----------|--------|--------------------------|
@@ -157,7 +217,7 @@ model Review {
 
 ---
 
-## 6. Data Integrity Notes
+## 7. Data Integrity Notes
 
 - `rating` validated 1–5 at the DTO layer only (`@Min(1) @Max(5)`). No DB `CHECK` constraint is defined in the baseline migration — a `CHECK (rating >= 1 AND rating <= 5)` migration is a recommended follow-up for a true second defense layer.
 - `fitFeedback` validated against 3 allowed values (DTO whitelist + DB enum)

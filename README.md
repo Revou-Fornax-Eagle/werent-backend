@@ -3,7 +3,7 @@
 Backend API untuk **WeRent** (aplikasi rental pakaian / clothing rental e-commerce).
 
 > **Status:** fresh repo — baru implement **Epic RP-00 (Review Count)**, yaitu issue #9 + #10.
-> Epic RP-04 (Fit Assessment, issue #14 #15 #16) **belum dikerjakan** — lihat [SCOPE.md](SCOPE.md).
+> Epic RP-04 (Fit Assessment, issue #14 #15 #16) **belum dikerjakan** — jatah anggota tim lain.
 
 ---
 
@@ -61,15 +61,6 @@ npm run start:dev           # server di http://localhost:8000
 
 ---
 
-## 📐 Arsitektur
+## 🔒 Dukungan Fit Assessment (#14 #15 #16)
 
-Blueprint lengkap ada di [`docs/architecture/`](docs/architecture/):
-- PRD & scope: `00-overview.md`
-- System design (C4): `01-system-design.md`
-- Database schema: `database/01-schema.md`
-- API contracts: `api-contracts/01-standard.md`
-- Folder structure & aturan: `backend/01-folder-structure.md`
-- ADR & changelog: `backend/02-adr-changelog.md`
-- Threat model (STRIDE): `security/01-threat-model.md`
-
-Pembagian kerja tim ada di [SCOPE.md](SCOPE.md).
+Epic RP-04 (fit feedback data model, fit assessment algorithm, dan fit API) **belum dikerjakan** di repo ini — sengaja dikosongkan untuk pembagian kerja tim. Blueprint lengkap tersedia secara lokal (tidak di-push ke repo).

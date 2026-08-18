@@ -1,0 +1,59 @@
+// WeRent Backend — Prisma schema (PostgreSQL)
+// Mirrors docs/architecture/database/01-schema.md verbatim.
+// Fit feedback (enum FitFeedback, fitFeedback column, @@index([productId, fitFeedback]))
+// is intentionally EXCLUDED — owned by issue #14 (Epic RP-04, team).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews Review[]
+
+  @@map("users")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  category    String
+  price       Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  reviews Review[]
+
+  @@map("products")
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  productId String
+  userId    String
+  rating    Int      @db.SmallInt
+  title     String
+  body      String   @db.Text
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // One review per user per product (idempotency for review count)
+  @@unique([userId, productId])
+  @@index([productId, isDeleted])
+  @@map("reviews")
+}

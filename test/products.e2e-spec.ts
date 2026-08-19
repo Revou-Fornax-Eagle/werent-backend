@@ -1,10 +1,10 @@
 import { INestApplication } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
+import { FitFeedback, PrismaClient } from '@prisma/client';
 import request from 'supertest';
 import { createTestApp } from './helpers/test-app';
 
 /**
- * e2e — GET /api/products/:productId (issue #9).
+ * e2e — GET /api/products/:productId (issues #9, #16).
  * Test plan: docs/architecture/backend/01-folder-structure.md §6 (F1/F5 API).
  */
 describe('Products API (e2e)', () => {
@@ -46,6 +46,16 @@ describe('Products API (e2e)', () => {
         price: 75000,
       });
       expect(response.body.data.reviewCount).toBe(0);
+      expect(response.body.data.fitAssessment).toEqual({
+        assessment: null,
+        distribution: {
+          RUNS_SMALL: 0,
+          TRUE_TO_SIZE: 0,
+          RUNS_LARGE: 0,
+        },
+        totalResponses: 0,
+        hasData: false,
+      });
       expect(response.body.meta).toEqual({});
     });
 
@@ -63,6 +73,7 @@ describe('Products API (e2e)', () => {
           rating: 5,
           title: 'Pas',
           body: 'Ukurannya pas banget di badan saya, sangat nyaman.',
+          fitFeedback: FitFeedback.TRUE_TO_SIZE,
         },
       });
       await prisma.review.create({
@@ -72,6 +83,7 @@ describe('Products API (e2e)', () => {
           rating: 4,
           title: 'Kecilan',
           body: 'Sedikit kecilan di bagian dada untuk ukuran saya.',
+          fitFeedback: FitFeedback.RUNS_SMALL,
         },
       });
 
@@ -80,6 +92,55 @@ describe('Products API (e2e)', () => {
         .expect(200);
 
       expect(response.body.data.reviewCount).toBe(2);
+      expect(response.body.data.fitAssessment).toEqual({
+        assessment: FitFeedback.TRUE_TO_SIZE,
+        distribution: {
+          RUNS_SMALL: 1,
+          TRUE_TO_SIZE: 1,
+          RUNS_LARGE: 0,
+        },
+        totalResponses: 2,
+        hasData: true,
+      });
+    });
+
+    it('reviews without fit feedback return the explicit no-data state', async () => {
+      const product = await prisma.product.create({
+        data: {
+          name: 'No Fit Product',
+          description: 'Desc',
+          category: 'unisex',
+          price: 95000,
+        },
+      });
+      const user = await prisma.user.create({
+        data: { email: 'no-fit-product@example.com', name: 'No Fit' },
+      });
+      await prisma.review.create({
+        data: {
+          productId: product.id,
+          userId: user.id,
+          rating: 4,
+          title: 'Tanpa fit feedback',
+          body: 'Review ini valid tetapi tidak memberikan informasi ukuran.',
+        },
+      });
+
+      const response = await request(app.getHttpServer())
+        .get(`/api/products/${product.id}`)
+        .expect(200);
+
+      expect(response.body.data.reviewCount).toBe(1);
+      expect(response.body.data.fitAssessment).toEqual({
+        assessment: null,
+        distribution: {
+          RUNS_SMALL: 0,
+          TRUE_TO_SIZE: 0,
+          RUNS_LARGE: 0,
+        },
+        totalResponses: 0,
+        hasData: false,
+      });
     });
 
     it('soft-deleted reviews are excluded from the count', async () => {
@@ -96,6 +157,7 @@ describe('Products API (e2e)', () => {
           rating: 5,
           title: 'Aktif',
           body: 'Review aktif yang dihitung dalam agregasi.',
+          fitFeedback: FitFeedback.TRUE_TO_SIZE,
         },
       });
       await prisma.review.create({
@@ -105,6 +167,7 @@ describe('Products API (e2e)', () => {
           rating: 1,
           title: 'Dihapus',
           body: 'Review yang di-soft-delete tidak boleh dihitung.',
+          fitFeedback: FitFeedback.RUNS_SMALL,
           isDeleted: true,
         },
       });
@@ -114,6 +177,16 @@ describe('Products API (e2e)', () => {
         .expect(200);
 
       expect(response.body.data.reviewCount).toBe(1);
+      expect(response.body.data.fitAssessment).toEqual({
+        assessment: FitFeedback.TRUE_TO_SIZE,
+        distribution: {
+          RUNS_SMALL: 0,
+          TRUE_TO_SIZE: 1,
+          RUNS_LARGE: 0,
+        },
+        totalResponses: 1,
+        hasData: true,
+      });
     });
 
     it('TC6: product not found → 404 NOT_FOUND', async () => {

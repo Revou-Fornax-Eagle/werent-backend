@@ -6,7 +6,7 @@ import { ProductDetailResponse, ProductsService } from './products.service';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  /** GET /api/products/:productId — product + reviewCount (issue #9). */
+  /** Product detail with review count and fit assessment (issues #9, #16). */
   @Get(':productId')
   getProductDetail(
     @Param() params: GetProductParams,

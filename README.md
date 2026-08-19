@@ -4,7 +4,7 @@ Backend API untuk **WeRent** (aplikasi rental pakaian / clothing rental e-commer
 
 > **Status:** Epic RP-00 (Review Count, issue #9 + #10) dan data model fit feedback
 > (issue #14) serta algorithm fit assessment (issue #15) sudah diimplementasikan.
-> Product Detail fit API (issue #16) belum dikerjakan.
+> Product Detail fit API (issue #16) juga sudah tersedia.
 
 ---
 
@@ -16,6 +16,7 @@ Backend API untuk **WeRent** (aplikasi rental pakaian / clothing rental e-commer
 | [#10](https://github.com/Revou-Fornax-Eagle/werent/issues/10) | Real-time review count (Socket.io) | ✅ |
 | [#14](https://github.com/Revou-Fornax-Eagle/werent/issues/14) | Fit feedback data model + validation | ✅ |
 | [#15](https://github.com/Revou-Fornax-Eagle/werent/issues/15) | Overall fit assessment algorithm | ✅ |
+| [#16](https://github.com/Revou-Fornax-Eagle/werent/issues/16) | Fit assessment & distribution API | ✅ |
 
 ---
 
@@ -50,7 +51,7 @@ npm run start:dev           # server di http://localhost:8000
 
 | Endpoint | Deskripsi |
 |----------|-----------|
-| `GET /api/products/:productId` | Product detail + `reviewCount` (issue #9) |
+| `GET /api/products/:productId` | Product detail + `reviewCount` + `fitAssessment` (issue #9 #16) |
 | `POST /api/reviews` | Buat review dengan optional `fitFeedback` + emit real-time update (issue #9 #10 #14) |
 | `GET /health` | `{ status, db }` |
 
@@ -68,4 +69,4 @@ npm run start:dev           # server di http://localhost:8000
 
 - #14 — enum, kolom nullable, migration, persistence, dan validasi fit feedback: **selesai**.
 - #15 — majority vote, tie-break, distribution, dan no-data flag: **selesai**.
-- #16 — fit assessment pada Product Detail API: **belum dikerjakan**.
+- #16 — fit assessment pada Product Detail API: **selesai**.

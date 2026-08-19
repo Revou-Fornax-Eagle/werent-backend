@@ -2,8 +2,8 @@
 
 Backend API untuk **WeRent** (aplikasi rental pakaian / clothing rental e-commerce).
 
-> **Status:** fresh repo — baru implement **Epic RP-00 (Review Count)**, yaitu issue #9 + #10.
-> Epic RP-04 (Fit Assessment, issue #14 #15 #16) **belum dikerjakan** — jatah anggota tim lain.
+> **Status:** Epic RP-00 (Review Count, issue #9 + #10) dan data model fit feedback
+> (issue #14) sudah diimplementasikan. Algorithm dan API fit (issue #15 + #16) belum dikerjakan.
 
 ---
 
@@ -13,6 +13,7 @@ Backend API untuk **WeRent** (aplikasi rental pakaian / clothing rental e-commer
 |-------|-------|--------|
 | [#9](https://github.com/Revou-Fornax-Eagle/werent/issues/9) | Review count aggregation | ✅ |
 | [#10](https://github.com/Revou-Fornax-Eagle/werent/issues/10) | Real-time review count (Socket.io) | ✅ |
+| [#14](https://github.com/Revou-Fornax-Eagle/werent/issues/14) | Fit feedback data model + validation | ✅ |
 
 ---
 
@@ -48,7 +49,7 @@ npm run start:dev           # server di http://localhost:8000
 | Endpoint | Deskripsi |
 |----------|-----------|
 | `GET /api/products/:productId` | Product detail + `reviewCount` (issue #9) |
-| `POST /api/reviews` | Buat review + emit real-time update (issue #9 #10) |
+| `POST /api/reviews` | Buat review dengan optional `fitFeedback` + emit real-time update (issue #9 #10 #14) |
 | `GET /health` | `{ status, db }` |
 
 ### WebSocket
@@ -61,6 +62,8 @@ npm run start:dev           # server di http://localhost:8000
 
 ---
 
-## 🔒 Dukungan Fit Assessment (#14 #15 #16)
+## Dukungan Fit Assessment (#14 #15 #16)
 
-Epic RP-04 (fit feedback data model, fit assessment algorithm, dan fit API) **belum dikerjakan** di repo ini — sengaja dikosongkan untuk pembagian kerja tim. Blueprint lengkap tersedia secara lokal (tidak di-push ke repo).
+- #14 — enum, kolom nullable, migration, persistence, dan validasi fit feedback: **selesai**.
+- #15 — majority vote, tie-break, distribution, dan no-data flag: **belum dikerjakan**.
+- #16 — fit assessment pada Product Detail API: **belum dikerjakan**.

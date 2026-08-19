@@ -37,5 +37,5 @@ export class CreateReviewDto {
 
   @IsOptional()
   @IsEnum(FitFeedback, { message: 'fitFeedback must be one of: RUNS_SMALL, TRUE_TO_SIZE, RUNS_LARGE' })
-  fitFeedback?: FitFeedback;
+  fitFeedback?: FitFeedback | null;
 }

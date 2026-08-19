@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Review } from '@prisma/client';
+import { FitService } from '../fit/fit.service';
+import { FitAssessment } from '../fit/fit.types';
 import { ProductRepository } from '../products/repository/product.repository';
 import { UserRepository } from '../users/repository/user.repository';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -18,6 +20,7 @@ export class ReviewsService {
     private readonly productRepository: ProductRepository,
     private readonly userRepository: UserRepository,
     private readonly reviewGateway: ReviewGateway,
+    private readonly fitService: FitService,
   ) {}
 
   async create(dto: CreateReviewDto): Promise<CreateReviewResult> {
@@ -49,5 +52,13 @@ export class ReviewsService {
   /** F1 (#9): review count for a product — 0 explicit when empty. */
   countByProduct(productId: string): Promise<number> {
     return this.reviewRepository.countByProduct(productId);
+  }
+
+  async getFitAssessment(productId: string): Promise<FitAssessment> {
+    const feedbackCounts = await this.reviewRepository.groupByFitFeedback(
+      productId,
+    );
+
+    return this.fitService.aggregate(feedbackCounts);
   }
 }

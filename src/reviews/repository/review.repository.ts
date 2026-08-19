@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Review } from '@prisma/client';
+import { FitFeedback } from '../../common/enums/fit-feedback.enum';
+import { FitFeedbackCount } from '../../fit/fit.types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateReviewDto } from '../dto/create-review.dto';
 
@@ -25,6 +27,20 @@ export class ReviewRepository {
     return this.prismaService.review.count({
       where: { productId, isDeleted: false },
     });
+  }
+
+  async groupByFitFeedback(productId: string): Promise<FitFeedbackCount[]> {
+    const rows = await this.prismaService.review.groupBy({
+      by: ['fitFeedback'],
+      where: { productId, isDeleted: false },
+      _count: { _all: true },
+    });
+
+    return rows.map((row) => ({
+      fitFeedback:
+        row.fitFeedback === null ? null : FitFeedback[row.fitFeedback],
+      count: row._count._all,
+    }));
   }
 
   /**

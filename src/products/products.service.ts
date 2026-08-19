@@ -1,16 +1,18 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Product } from '@prisma/client';
+import { FitAssessment } from '../fit/fit.types';
 import { ReviewsService } from '../reviews/reviews.service';
 import { ProductRepository } from './repository/product.repository';
 
 export interface ProductDetailResponse {
   product: Product;
   reviewCount: number;
+  fitAssessment: FitAssessment;
 }
 
 /**
- * Product lookup + review count orchestration for the PDP endpoint (issue #9).
- * Fit assessment (issue #16) intentionally excluded — Epic RP-04, team.
+ * Product lookup + review aggregation orchestration for the PDP endpoint
+ * (issues #9 and #16).
  */
 @Injectable()
 export class ProductsService {
@@ -25,8 +27,11 @@ export class ProductsService {
       throw new NotFoundException(`Product with id ${productId} not found`);
     }
 
-    const reviewCount = await this.reviewsService.countByProduct(productId);
+    const [reviewCount, fitAssessment] = await Promise.all([
+      this.reviewsService.countByProduct(productId),
+      this.reviewsService.getFitAssessment(productId),
+    ]);
 
-    return { product, reviewCount };
+    return { product, reviewCount, fitAssessment };
   }
 }

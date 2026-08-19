@@ -4,7 +4,7 @@ import request from 'supertest';
 import { createTestApp } from './helpers/test-app';
 
 /**
- * e2e — POST /api/reviews (issues #9, #10).
+ * e2e — POST /api/reviews (issues #9, #10, #14).
  * Test plan: docs/architecture/backend/01-folder-structure.md §6 (F1/F2 API).
  */
 describe('Reviews API (e2e)', () => {
@@ -65,6 +65,7 @@ describe('Reviews API (e2e)', () => {
         rating: 4,
         title: 'Bagus sekali!',
         body: 'Ukurannya pas di badan saya, sangat nyaman dipakai.',
+        fitFeedback: 'TRUE_TO_SIZE',
       };
 
       const response = await request(app.getHttpServer())
@@ -78,9 +79,19 @@ describe('Reviews API (e2e)', () => {
         userId: secondUserId,
         rating: 4,
         title: 'Bagus sekali!',
+        fitFeedback: 'TRUE_TO_SIZE',
       });
       expect(response.body.data.reviewCount).toBe(2); // pre-created + new
       expect(response.body.meta).toEqual({});
+
+      const storedReview = await prisma.review.findFirst({
+        where: {
+          productId: existingProductId,
+          userId: secondUserId,
+        },
+      });
+
+      expect(storedReview?.fitFeedback).toBe('TRUE_TO_SIZE');
     });
 
     it('returns explicit reviewCount 1 on first review of a product', async () => {
@@ -100,6 +111,33 @@ describe('Reviews API (e2e)', () => {
         .expect(201);
 
       expect(response.body.data.reviewCount).toBe(1);
+      expect(response.body.data.review.fitFeedback).toBeNull();
+    });
+
+    it('invalid fitFeedback → 400 VALIDATION_ERROR and no review created', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/api/reviews')
+        .send({
+          productId: existingProductId,
+          userId: secondUserId,
+          rating: 4,
+          title: 'Fit feedback salah',
+          body: 'Review dengan fit feedback tidak valid harus ditolak.',
+          fitFeedback: 'TOO_SMALL',
+        })
+        .expect(400);
+
+      expect(response.body.success).toBe(false);
+      expect(response.body.error.code).toBe('VALIDATION_ERROR');
+
+      const storedReview = await prisma.review.findFirst({
+        where: {
+          productId: existingProductId,
+          userId: secondUserId,
+        },
+      });
+
+      expect(storedReview).toBeNull();
     });
 
     it('TC3: duplicate (userId, productId) → 409 CONFLICT', async () => {

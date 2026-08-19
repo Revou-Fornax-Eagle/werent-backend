@@ -15,6 +15,7 @@ export class ReviewRepository {
         rating: data.rating,
         title: data.title,
         body: data.body,
+        fitFeedback: data.fitFeedback ?? null,
       },
     });
   }

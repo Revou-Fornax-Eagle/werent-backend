@@ -1,11 +1,10 @@
 /**
  * WeRent Backend — dev seed script (ADR-006: seed is a dev concern).
  * Creates sample products, users, and reviews so the demo works out of the box.
- * Fit feedback intentionally omitted (issue #14, Epic RP-04 — team).
  *
  * Usage: node_modules/.bin/ts-node prisma/seed.ts
  */
-import { Prisma, PrismaClient } from '@prisma/client';
+import { FitFeedback, Prisma, PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -59,7 +58,7 @@ async function main(): Promise<void> {
     users.push(user);
   }
 
-  // 5 reviews for product[0] (Kemeja Linen Oversize) → reviewCount 5.
+  // 5 reviews for product[0]: 3 TRUE_TO_SIZE, 1 RUNS_SMALL, 1 RUNS_LARGE.
   const reviewSeeds: Array<Prisma.ReviewUncheckedCreateInput> = [
     {
       productId: products[0].id,
@@ -67,6 +66,7 @@ async function main(): Promise<void> {
       rating: 5,
       title: 'Pas banget!',
       body: 'Ukurannya pas di badan saya, bahan linennya nyaman dipakai seharian.',
+      fitFeedback: FitFeedback.TRUE_TO_SIZE,
     },
     {
       productId: products[0].id,
@@ -74,6 +74,7 @@ async function main(): Promise<void> {
       rating: 4,
       title: 'Nyaman dan adem',
       body: 'Bahan adem, modelnya oversize sesuai ekspektasi. Recommended!',
+      fitFeedback: FitFeedback.TRUE_TO_SIZE,
     },
     {
       productId: products[0].id,
@@ -81,6 +82,7 @@ async function main(): Promise<void> {
       rating: 3,
       title: 'Sedikit kebesaran',
       body: 'Untuk tinggi 155, potongan ini sedikit kebesaran tapi masih bisa dipakai.',
+      fitFeedback: FitFeedback.RUNS_LARGE,
     },
     {
       productId: products[0].id,
@@ -88,6 +90,7 @@ async function main(): Promise<void> {
       rating: 5,
       title: 'Kualitas bagus',
       body: 'Jahitan rapi, warna sesuai foto. Ukuran M pas untuk tinggi 170.',
+      fitFeedback: FitFeedback.TRUE_TO_SIZE,
     },
     {
       productId: products[0].id,
@@ -95,6 +98,7 @@ async function main(): Promise<void> {
       rating: 2,
       title: 'Terlalu ketat di bahu',
       body: 'Ukurannya terlalu kecil di bagian bahu untuk postur saya yang lebar.',
+      fitFeedback: FitFeedback.RUNS_SMALL,
     },
   ];
 

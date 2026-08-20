@@ -140,22 +140,58 @@ describe('Reviews API (e2e)', () => {
       expect(storedReview).toBeNull();
     });
 
-    it('TC3: duplicate (userId, productId) → 409 CONFLICT', async () => {
+    it('TC3 (REV-27): duplicate (userId, productId) → 201, rotated to a new userId', async () => {
       const payload = {
         productId: existingProductId,
         userId: existingUserId, // already has a review for this product
         rating: 3,
         title: 'Coba lagi',
-        body: 'Review kedua untuk produk yang sama harus ditolak.',
+        body: 'Review kedua untuk produk yang sama harus diterima.',
       };
 
       const response = await request(app.getHttpServer())
         .post('/api/reviews')
         .send(payload)
-        .expect(409);
+        .expect(201);
 
-      expect(response.body.success).toBe(false);
-      expect(response.body.error.code).toBe('CONFLICT');
+      expect(response.body.success).toBe(true);
+      expect(response.body.data.review.userId).not.toBe(existingUserId);
+      expect(response.body.data.reviewCount).toBe(2); // pre-created + rotated
+
+      // Original review for existingUserId is untouched.
+      const originalReview = await prisma.review.findUnique({
+        where: {
+          userId_productId: { userId: existingUserId, productId: existingProductId },
+        },
+      });
+      expect(originalReview?.title).toBe('Existing review');
+
+      // Rotated review was stored under the new (guest) userId.
+      const rotatedReview = await prisma.review.findUnique({
+        where: {
+          userId_productId: {
+            userId: response.body.data.review.userId,
+            productId: existingProductId,
+          },
+        },
+      });
+      expect(rotatedReview?.title).toBe('Coba lagi');
+    });
+
+    it('REV-27: the @@unique([userId, productId]) constraint still rejects a real duplicate insert', async () => {
+      // Simulates a genuine post-auth duplicate (bypassing the rotation
+      // check) to prove the DB constraint itself was not removed.
+      await expect(
+        prisma.review.create({
+          data: {
+            productId: existingProductId,
+            userId: existingUserId,
+            rating: 1,
+            title: 'Should be rejected',
+            body: 'This insert must fail on the unique constraint.',
+          },
+        }),
+      ).rejects.toMatchObject({ code: 'P2002' });
     });
 
     it('product not found → 404 NOT_FOUND', async () => {

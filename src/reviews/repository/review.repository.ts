@@ -42,6 +42,19 @@ export class ReviewRepository {
     });
   }
 
+  /** REV-27: pre-check used to rotate userId before hitting the unique constraint. */
+  async existsForUserAndProduct(
+    userId: string,
+    productId: string,
+  ): Promise<boolean> {
+    const review = await this.prismaService.review.findUnique({
+      where: { userId_productId: { userId, productId } },
+      select: { id: true },
+    });
+
+    return review !== null;
+  }
+
   /** F1 (#9): count active (non-soft-deleted) reviews for a product. */
   countByProduct(productId: string): Promise<number> {
     return this.prismaService.review.count({

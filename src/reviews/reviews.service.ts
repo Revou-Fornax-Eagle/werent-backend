@@ -52,10 +52,27 @@ export class ReviewsService {
       throw new NotFoundException(`User ${dto.userId} not found`);
     }
 
+    // REV-27: temporary no-auth workaround. The frontend has no login yet and
+    // always sends the same userId, so a 2nd review for the same product would
+    // trip the @@unique([userId, productId]) constraint. Rotate to a fresh
+    // placeholder user instead of erroring — the constraint itself stays intact
+    // for real (post-auth) users. Small TOCTOU race on concurrent duplicate
+    // submissions is acceptable here: the existing P2002 → 409 mapping still
+    // catches it. Remove this rotation once real auth exists.
+    let userId = dto.userId;
+    const alreadyReviewed = await this.reviewRepository.existsForUserAndProduct(
+      userId,
+      dto.productId,
+    );
+    if (alreadyReviewed) {
+      const guest = await this.userRepository.createGuest();
+      userId = guest.id;
+    }
+
     // No transaction needed: `create` is atomic on its own, and `countByProduct`
     // always re-reads from the DB (source of truth). The unique (userId, productId)
     // constraint guarantees idempotency, so a failed count cannot cause a double-count.
-    const review = await this.reviewRepository.create(dto);
+    const review = await this.reviewRepository.create({ ...dto, userId });
     const reviewCount = await this.reviewRepository.countByProduct(dto.productId);
     const result = { review, reviewCount };
 

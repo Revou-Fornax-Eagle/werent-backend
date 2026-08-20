@@ -5,12 +5,27 @@ import { FitAssessment } from '../fit/fit.types';
 import { ProductRepository } from '../products/repository/product.repository';
 import { UserRepository } from '../users/repository/user.repository';
 import { CreateReviewDto } from './dto/create-review.dto';
+import { GetProductReviewsQueryDto } from './dto/get-product-reviews-query.dto';
 import { ReviewGateway } from './gateway/review.gateway';
-import { ReviewRepository } from './repository/review.repository';
+import {
+  ReviewListResult,
+  ReviewRepository,
+} from './repository/review.repository';
 
 export interface CreateReviewResult {
   review: Review;
   reviewCount: number;
+}
+
+export interface GetProductReviewsResult {
+  data: {
+    reviews: ReviewListResult['reviews'];
+  };
+  meta: {
+    page: number;
+    per_page: number;
+    total: number;
+  };
 }
 
 @Injectable()
@@ -32,6 +47,7 @@ export class ReviewsService {
     if (!product) {
       throw new NotFoundException(`Product ${dto.productId} not found`);
     }
+
     if (!user) {
       throw new NotFoundException(`User ${dto.userId} not found`);
     }
@@ -47,6 +63,38 @@ export class ReviewsService {
     this.reviewGateway.emitReviewCountUpdate(dto.productId, result.reviewCount);
 
     return result;
+  }
+
+  /**
+   * Returns active reviews for a product with pagination.
+   */
+  async getProductReviews(
+    productId: string,
+    query: GetProductReviewsQueryDto,
+  ): Promise<GetProductReviewsResult> {
+    const productExists =
+      await this.reviewRepository.productExists(productId);
+
+    if (!productExists) {
+      throw new NotFoundException(`Product ${productId} not found`);
+    }
+
+    const result = await this.reviewRepository.findActiveByProduct(
+      productId,
+      query.page,
+      query.per_page,
+    );
+
+    return {
+      data: {
+        reviews: result.reviews,
+      },
+      meta: {
+        page: query.page,
+        per_page: query.per_page,
+        total: result.total,
+      },
+    };
   }
 
   /** F1 (#9): review count for a product — 0 explicit when empty. */

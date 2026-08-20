@@ -1,9 +1,29 @@
 import { Injectable } from '@nestjs/common';
-import { Review } from '@prisma/client';
+import { Prisma, Review } from '@prisma/client';
 import { FitFeedback } from '../../common/enums/fit-feedback.enum';
 import { FitFeedbackCount } from '../../fit/fit.types';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateReviewDto } from '../dto/create-review.dto';
+
+const reviewListSelect = {
+  id: true,
+  productId: true,
+  userId: true,
+  rating: true,
+  title: true,
+  body: true,
+  fitFeedback: true,
+  createdAt: true,
+} satisfies Prisma.ReviewSelect;
+
+export type ReviewListItem = Prisma.ReviewGetPayload<{
+  select: typeof reviewListSelect;
+}>;
+
+export interface ReviewListResult {
+  reviews: ReviewListItem[];
+  total: number;
+}
 
 @Injectable()
 export class ReviewRepository {
@@ -27,6 +47,39 @@ export class ReviewRepository {
     return this.prismaService.review.count({
       where: { productId, isDeleted: false },
     });
+  }
+
+  async findActiveByProduct(
+    productId: string,
+    page: number,
+    perPage: number,
+  ): Promise<ReviewListResult> {
+    const skip = (page - 1) * perPage;
+
+    const where = {
+      productId,
+      isDeleted: false,
+    };
+
+    const [reviews, total] = await Promise.all([
+      this.prismaService.review.findMany({
+        where,
+        select: reviewListSelect,
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: perPage,
+      }),
+      this.prismaService.review.count({
+        where,
+      }),
+    ]);
+
+    return {
+      reviews,
+      total,
+    };
   }
 
   async groupByFitFeedback(productId: string): Promise<FitFeedbackCount[]> {
